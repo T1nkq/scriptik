@@ -57,7 +57,7 @@ function Fluent.new()
 
     local mainFrameSize, mainFramePosition, mainFrameAnchorPoint
     if isMobile then
-        mainFrameSize = UDim2.new(0.9, 0, 0.5, 0)
+        mainFrameSize = UDim2.new(0.9, 0.8, 0, Config.WindowSize.Y) 
         mainFramePosition = UDim2.new(0.5, 0, 0.05, 0)
         mainFrameAnchorPoint = Vector2.new(0.5, 0)
     else
