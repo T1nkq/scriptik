@@ -1,7 +1,7 @@
 --[[
     UI Library: Fluent
-    Version: 5.1 (Hybrid Responsive Layout)
-    Description: A responsive UI library using UIAspectRatioConstraint for perfect scaling.
+    Version: 5.2 (Mobile Top Align)
+    Description: A responsive UI library with correct vertical alignment on mobile.
 ]]
 
 --// Сервисы и переменные
@@ -66,22 +66,25 @@ function Fluent.new()
         ResetOnSpawn = false,
     })
 
-    -- ИЗМЕНЕНИЕ: Гибридный подход к размеру
-    local mainFrameSize
+    -- ИЗМЕНЕНИЕ: Гибридный подход к размеру и позиции
+    local mainFrameSize, mainFramePosition, mainFrameAnchorPoint
     if isMobile then
-        -- На телефоне окно будет занимать 90% ширины, высота подстроится автоматически
         mainFrameSize = UDim2.new(0.9, 0, 0, Config.WindowSize.Y) 
+        -- Привязываем к верхнему краю с отступом 5%
+        mainFramePosition = UDim2.new(0.5, 0, 0.05, 0)
+        mainFrameAnchorPoint = Vector2.new(0.5, 0)
     else
-        -- На ПК используем фиксированный размер
         mainFrameSize = UDim2.fromOffset(Config.WindowSize.X, Config.WindowSize.Y)
+        -- На ПК центрируем как обычно
+        mainFramePosition = UDim2.fromScale(0.5, 0.5)
+        mainFrameAnchorPoint = Vector2.new(0.5, 0.5)
     end
 
     self.MainFrame = Create("Frame", {
         Name = "MainFrame", Parent = self.ScreenGui, Size = mainFrameSize,
-        Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = mainFramePosition, AnchorPoint = mainFrameAnchorPoint,
         BackgroundColor3 = Config.Colors.Background, BorderSizePixel = 0, ClipsDescendants = true, Visible = true,
         Children = {
-            -- ИЗМЕНЕНИЕ: Добавляем UIAspectRatioConstraint для сохранения пропорций
             Create("UIAspectRatioConstraint", {
                 AspectRatio = Config.WindowSize.X / Config.WindowSize.Y,
                 DominantAxis = Enum.DominantAxis.Width,
@@ -92,7 +95,6 @@ function Fluent.new()
     })
     
     self.DragFrame = Create("Frame", { Name = "DragFrame", Parent = self.MainFrame, Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1 })
-
     self.Sidebar = Create("Frame", { Name = "SidebarContainer", Parent = self.MainFrame, Size = UDim2.new(0, 180, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true })
 
     Create("Frame", { Parent = self.Sidebar, Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Config.Colors.Secondary, BorderSizePixel = 0,
@@ -134,7 +136,6 @@ function Fluent.new()
 end
 
 function Fluent:SetupWindowControls()
-    -- ИЗМЕНЕНИЕ: Кнопки теперь привязаны к MainFrame, а не к DragFrame
     local controlsFrame = Create("Frame", {
         Name = "ControlsFrame", Parent = self.MainFrame, Size = UDim2.fromOffset(60, 24), Position = UDim2.new(1, -15, 0, 20),
         AnchorPoint = Vector2.new(1, 0.5), BackgroundTransparency = 1,
@@ -196,7 +197,7 @@ function Fluent:CreateButton(props)
         AutoButtonColor = false, LayoutOrder = props.LayoutOrder, AnchorPoint = Vector2.new(0.5, 0.5),
         Children = { Create("UICorner", { CornerRadius = UDim.new(0, Config.Rounding - 2) }), Create("UIStroke", { Color = Config.Colors.Border, Thickness = 1 }) }
     })
-    if props.Parent and not props.Parent:FindFirstChildOfClass("UILayout") then btn.Position = props.Position or UDim2.new(0.5, 0, 0.5, 0) end
+    if props.Parent and not props.Parent:IsA("GuiObjectWithLayout") then btn.Position = props.Position or UDim2.new(0.5, 0, 0.5, 0) end
     local originalColor, hoverColor = btn.BackgroundColor3, props.HoverColor or Config.Colors.Hover
     btn.MouseEnter:Connect(function() btn.BackgroundColor3 = hoverColor end)
     btn.MouseLeave:Connect(function() btn.BackgroundColor3 = originalColor end)
