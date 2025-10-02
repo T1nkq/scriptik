@@ -1,4 +1,10 @@
+--[[
+    UI Library: Fluent
+    Version: 5.1 (Hybrid Responsive Layout)
+    Description: A responsive UI library using UIAspectRatioConstraint for perfect scaling.
+]]
 
+--// Сервисы и переменные
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -6,12 +12,14 @@ local RunService = game:GetService("RunService")
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 
+--// Библиотека UI
 local Fluent = {}
 Fluent.__index = Fluent
 
+--// Конфигурация стиля
 local Config = {
     Title = "Project Fluent",
-    WindowSize = Vector2.new(620, 450), -- Размер для ПК
+    WindowSize = Vector2.new(620, 450), -- Базовый размер для ПК
     AccentColor = Color3.fromRGB(88, 101, 242),
     ErrorColor = Color3.fromRGB(237, 66, 69),
     Colors = {
@@ -31,6 +39,7 @@ local Config = {
     Rounding = 10,
 }
 
+--// Вспомогательная функция для создания элементов
 local function Create(className, properties)
     local element = Instance.new(className)
     local children = properties.Children
@@ -46,9 +55,9 @@ local function Create(className, properties)
     return element
 end
 
+--// Конструктор UI
 function Fluent.new()
     local self = setmetatable({}, Fluent)
-    
     local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
 
     self.ScreenGui = Create("ScreenGui", {
@@ -57,20 +66,14 @@ function Fluent.new()
         ResetOnSpawn = false,
     })
 
-    local mainFrameSize, sidebarSize, contentPosition, contentSize, titleSize
-
+    -- ИЗМЕНЕНИЕ: Гибридный подход к размеру
+    local mainFrameSize
     if isMobile then
-        mainFrameSize = UDim2.new(0.9, 0, 0.8, 0)
-        sidebarSize = UDim2.new(0.4, 0, 1, 0)
-        contentPosition = UDim2.new(0.4, 5, 0, 45)
-        contentSize = UDim2.new(0.6, -10, 1, -50)
-        titleSize = UDim2.new(0.6, -10, 1, 0)
+        -- На телефоне окно будет занимать 90% ширины, высота подстроится автоматически
+        mainFrameSize = UDim2.new(0.9, 0, 0, Config.WindowSize.Y) 
     else
+        -- На ПК используем фиксированный размер
         mainFrameSize = UDim2.fromOffset(Config.WindowSize.X, Config.WindowSize.Y)
-        sidebarSize = UDim2.fromOffset(180, Config.WindowSize.Y)
-        contentPosition = UDim2.fromOffset(185, 45)
-        contentSize = UDim2.new(1, -190, 1, -50)
-        titleSize = UDim2.new(1, -70, 1, 0)
     end
 
     self.MainFrame = Create("Frame", {
@@ -78,6 +81,11 @@ function Fluent.new()
         Position = UDim2.fromScale(0.5, 0.5), AnchorPoint = Vector2.new(0.5, 0.5),
         BackgroundColor3 = Config.Colors.Background, BorderSizePixel = 0, ClipsDescendants = true, Visible = true,
         Children = {
+            -- ИЗМЕНЕНИЕ: Добавляем UIAspectRatioConstraint для сохранения пропорций
+            Create("UIAspectRatioConstraint", {
+                AspectRatio = Config.WindowSize.X / Config.WindowSize.Y,
+                DominantAxis = Enum.DominantAxis.Width,
+            }),
             Create("UICorner", { CornerRadius = UDim.new(0, Config.Rounding) }),
             Create("UIStroke", { Color = Config.Colors.Border, Thickness = 1.5 }),
         },
@@ -85,7 +93,7 @@ function Fluent.new()
     
     self.DragFrame = Create("Frame", { Name = "DragFrame", Parent = self.MainFrame, Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1 })
 
-    self.Sidebar = Create("Frame", { Name = "SidebarContainer", Parent = self.MainFrame, Size = sidebarSize, BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true })
+    self.Sidebar = Create("Frame", { Name = "SidebarContainer", Parent = self.MainFrame, Size = UDim2.new(0, 180, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true })
 
     Create("Frame", { Parent = self.Sidebar, Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Config.Colors.Secondary, BorderSizePixel = 0,
         Children = {
@@ -96,7 +104,7 @@ function Fluent.new()
     
     self.SidebarButtonContainer = Create("ScrollingFrame", {
         Name = "ButtonContainer", Parent = self.Sidebar, Size = UDim2.new(1, 0, 1, -60), BackgroundTransparency = 1,
-        BorderSizePixel = 0, CanvasSize = UDim2.new(0,0,0,0), ScrollBarThickness = 0,
+        BorderSizePixel = 0, CanvasSize = UDim2.new(0,0,0,0), ScrollBarThickness = 3, ScrollBarImageColor3 = Config.AccentColor,
         Children = {
             Create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Center, FillDirection = Enum.FillDirection.Vertical }),
             Create("UIPadding", { PaddingTop = UDim.new(0, 12) })
@@ -104,7 +112,7 @@ function Fluent.new()
     })
 
     self.ContentFrame = Create("ScrollingFrame", {
-        Name = "ContentFrame", Parent = self.MainFrame, Size = contentSize, Position = contentPosition, BackgroundTransparency = 1,
+        Name = "ContentFrame", Parent = self.MainFrame, Size = UDim2.new(1, -180, 1, -40), Position = UDim2.new(0, 180, 0, 40), BackgroundTransparency = 1,
         BorderSizePixel = 0, ScrollBarThickness = 6, ScrollBarImageColor3 = Config.AccentColor,
         Children = {
             Create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }),
@@ -113,10 +121,9 @@ function Fluent.new()
     })
 
     self.TitleLabel = Create("TextLabel", {
-        Name = "TitleLabel", Parent = self.DragFrame, Size = titleSize, BackgroundTransparency = 1,
-        Position = UDim2.new(isMobile and 0.4 or 0, isMobile and 5 or 185, 0, 0), -- Динамическая позиция заголовка
-        Font = Config.Fonts.Title, Text = Config.Title, TextColor3 = Config.Colors.Text, TextSize = 20, TextXAlignment = Enum.TextXAlignment.Left,
-        Children = { Create("UIPadding", { PaddingLeft = UDim.new(0, 15) }) }
+        Name = "TitleLabel", Parent = self.MainFrame, Size = UDim2.new(1, -250, 0, 40), Position = UDim2.new(0.5, 0, 0, 0),
+        AnchorPoint = Vector2.new(0.5, 0), BackgroundTransparency = 1, Font = Config.Fonts.Title, Text = Config.Title,
+        TextColor3 = Config.Colors.Text, TextSize = 20,
     })
 
     self:SetupWindowControls()
@@ -127,10 +134,11 @@ function Fluent.new()
 end
 
 function Fluent:SetupWindowControls()
+    -- ИЗМЕНЕНИЕ: Кнопки теперь привязаны к MainFrame, а не к DragFrame
     local controlsFrame = Create("Frame", {
-        Name = "ControlsFrame", Parent = self.DragFrame, Size = UDim2.fromOffset(60, 24), Position = UDim2.new(1, -70, 0.5, 0),
-        AnchorPoint = Vector2.new(1, 0.5), BackgroundTransparency = 1, -- Смещаем к правому краю
-        Children = { Create("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) }) }
+        Name = "ControlsFrame", Parent = self.MainFrame, Size = UDim2.fromOffset(60, 24), Position = UDim2.new(1, -15, 0, 20),
+        AnchorPoint = Vector2.new(1, 0.5), BackgroundTransparency = 1,
+        Children = { Create("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8), VerticalAlignment = Enum.VerticalAlignment.Center }) }
     })
     self:CreateButton({ Parent = controlsFrame, Size = UDim2.fromOffset(24, 24), Text = "–", BackgroundColor = Config.Colors.Secondary,
         OnClick = function() self.MainFrame.Visible = false; self.RestoreButton.Visible = true end
@@ -174,7 +182,7 @@ function Fluent:AddSidebarButton(text, onClick)
 end
 
 function Fluent:AddContentButton(text, onClick)
-    local button = self:CreateButton({ Parent = self.ContentFrame, Size = UDim2.new(1, -10, 0, 38), Text = text, BackgroundColor = Config.Colors.Secondary, OnClick = onClick })
+    local button = self:CreateButton({ Parent = self.ContentFrame, Size = UDim2.new(1, -20, 0, 38), Text = text, BackgroundColor = Config.Colors.Secondary, OnClick = onClick })
     RunService.Heartbeat:Wait()
     self.ContentFrame.CanvasSize = UDim2.new(0, 0, 0, self.ContentFrame.UIListLayout.AbsoluteContentSize.Y)
     return button
@@ -188,7 +196,7 @@ function Fluent:CreateButton(props)
         AutoButtonColor = false, LayoutOrder = props.LayoutOrder, AnchorPoint = Vector2.new(0.5, 0.5),
         Children = { Create("UICorner", { CornerRadius = UDim.new(0, Config.Rounding - 2) }), Create("UIStroke", { Color = Config.Colors.Border, Thickness = 1 }) }
     })
-    if props.Parent and not props.Parent:IsA("GuiObjectWithLayout") then btn.Position = props.Position or UDim2.new(0.5, 0, 0.5, 0) end
+    if props.Parent and not props.Parent:FindFirstChildOfClass("UILayout") then btn.Position = props.Position or UDim2.new(0.5, 0, 0.5, 0) end
     local originalColor, hoverColor = btn.BackgroundColor3, props.HoverColor or Config.Colors.Hover
     btn.MouseEnter:Connect(function() btn.BackgroundColor3 = hoverColor end)
     btn.MouseLeave:Connect(function() btn.BackgroundColor3 = originalColor end)
@@ -196,6 +204,7 @@ function Fluent:CreateButton(props)
     return btn
 end
 
+--// ===== ИСПОЛЬЗОВАНИЕ БИБЛИОТЕКИ =====
 local MyUI = Fluent.new()
 MyUI:AddSidebarButton("💰 AutoFarm", function() print("Открыта главная вкладка") end)
 MyUI:AddSidebarButton("⚙️ Settings", function() print("Открыты настройки") end)
