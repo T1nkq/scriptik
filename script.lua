@@ -1,10 +1,3 @@
---[[
-    UI Library: Fluent
-    Version: 5.2 (Mobile Top Align)
-    Description: A responsive UI library with correct vertical alignment on mobile.
-]]
-
---// Сервисы и переменные
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -12,14 +5,12 @@ local RunService = game:GetService("RunService")
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 
---// Библиотека UI
 local Fluent = {}
 Fluent.__index = Fluent
 
---// Конфигурация стиля
 local Config = {
-    Title = "Project Fluent",
-    WindowSize = Vector2.new(620, 450), -- Базовый размер для ПК
+    Title = "T1nkq",
+    WindowSize = Vector2.new(620, 450),
     AccentColor = Color3.fromRGB(88, 101, 242),
     ErrorColor = Color3.fromRGB(237, 66, 69),
     Colors = {
@@ -39,7 +30,6 @@ local Config = {
     Rounding = 10,
 }
 
---// Вспомогательная функция для создания элементов
 local function Create(className, properties)
     local element = Instance.new(className)
     local children = properties.Children
@@ -55,7 +45,6 @@ local function Create(className, properties)
     return element
 end
 
---// Конструктор UI
 function Fluent.new()
     local self = setmetatable({}, Fluent)
     local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
@@ -66,16 +55,13 @@ function Fluent.new()
         ResetOnSpawn = false,
     })
 
-    -- ИЗМЕНЕНИЕ: Гибридный подход к размеру и позиции
     local mainFrameSize, mainFramePosition, mainFrameAnchorPoint
     if isMobile then
         mainFrameSize = UDim2.new(0.9, 0, 0, Config.WindowSize.Y) 
-        -- Привязываем к верхнему краю с отступом 5%
         mainFramePosition = UDim2.new(0.5, 0, 0.05, 0)
         mainFrameAnchorPoint = Vector2.new(0.5, 0)
     else
         mainFrameSize = UDim2.fromOffset(Config.WindowSize.X, Config.WindowSize.Y)
-        -- На ПК центрируем как обычно
         mainFramePosition = UDim2.fromScale(0.5, 0.5)
         mainFrameAnchorPoint = Vector2.new(0.5, 0.5)
     end
