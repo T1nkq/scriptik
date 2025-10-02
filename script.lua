@@ -9,7 +9,7 @@ local Fluent = {}
 Fluent.__index = Fluent
 
 local Config = {
-    Title = "T1nkq",
+    Title = "T1nkq1",
     WindowSize = Vector2.new(620, 450),
     AccentColor = Color3.fromRGB(88, 101, 242),
     ErrorColor = Color3.fromRGB(237, 66, 69),
@@ -57,7 +57,7 @@ function Fluent.new()
 
     local mainFrameSize, mainFramePosition, mainFrameAnchorPoint
     if isMobile then
-        mainFrameSize = UDim2.new(0.9, 0, 0, 300)
+        mainFrameSize = UDim2.new(0, 500, 0, 300)
         mainFramePosition = UDim2.new(0.5, 0, 0.05, 0)
         mainFrameAnchorPoint = Vector2.new(0.5, 0)
     else
