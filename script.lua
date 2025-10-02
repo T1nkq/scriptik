@@ -57,7 +57,7 @@ function Fluent.new()
 
     local mainFrameSize, mainFramePosition, mainFrameAnchorPoint
     if isMobile then
-        mainFrameSize = UDim2.new(0.9, 0, 0.5, 0) -- 50% от высоты родителя
+        mainFrameSize = UDim2.new(0.9, 0, 0, 300)
         mainFramePosition = UDim2.new(0.5, 0, 0.05, 0)
         mainFrameAnchorPoint = Vector2.new(0.5, 0)
     else
