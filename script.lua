@@ -9,7 +9,7 @@ local Fluent = {}
 Fluent.__index = Fluent
 
 local Config = {
-    Title = "T1nkq1",
+    Title = "T1nkq",
     WindowSize = Vector2.new(620, 450),
     AccentColor = Color3.fromRGB(88, 101, 242),
     ErrorColor = Color3.fromRGB(237, 66, 69),
@@ -50,26 +50,16 @@ function Fluent.new()
     local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
     local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
-    -- Создаём ScreenGui
     self.ScreenGui = Create("ScreenGui", {
         Name = "FluentUI_" .. math.random(1000, 9999),
         ZIndexBehavior = Enum.ZIndexBehavior.Global,
         ResetOnSpawn = false,
     })
 
-    -- Размер, позиция и AnchorPoint
-    local mainFrameSize, mainFramePosition, mainFrameAnchorPoint
-    if isMobile then
-        mainFrameSize = UDim2.new(0, 500, 0, 300)
-        mainFramePosition = UDim2.new(0.5, 0, 0.05, 0)
-        mainFrameAnchorPoint = Vector2.new(0.5, 0)
-    else
-        mainFrameSize = UDim2.fromOffset(Config.WindowSize.X, Config.WindowSize.Y)
-        mainFramePosition = UDim2.fromScale(0.5, 0.5)
-        mainFrameAnchorPoint = Vector2.new(0.5, 0.5)
-    end
+    local mainFrameSize = UDim2.new(0, 600, 0, 300)
+    local mainFramePosition = UDim2.new(0.5, 0, 0.05, 0)
+    local mainFrameAnchorPoint = Vector2.new(0.5, 0)
 
-    -- Главный фрейм
     self.MainFrame = Create("Frame", {
         Name = "MainFrame",
         Parent = self.ScreenGui,
@@ -82,16 +72,6 @@ function Fluent.new()
         Visible = true,
     })
 
-    -- Добавляем AspectRatio только на ПК
-    if not isMobile then
-        Create("UIAspectRatioConstraint", {
-            Parent = self.MainFrame,
-            AspectRatio = Config.WindowSize.X / Config.WindowSize.Y,
-            DominantAxis = Enum.DominantAxis.Width,
-        })
-    end
-
-    -- Остальные элементы
     Create("UICorner", { Parent = self.MainFrame, CornerRadius = UDim.new(0, Config.Rounding) })
     Create("UIStroke", { Parent = self.MainFrame, Color = Config.Colors.Border, Thickness = 1.5 })
 
@@ -180,6 +160,7 @@ function Fluent.new()
 end
 
 
+
 function Fluent:SetupWindowControls()
     local controlsFrame = Create("Frame", {
         Name = "ControlsFrame", Parent = self.MainFrame, Size = UDim2.fromOffset(60, 24), Position = UDim2.new(1, -15, 0, 20),
@@ -250,7 +231,6 @@ function Fluent:CreateButton(props)
     return btn
 end
 
---// ===== ИСПОЛЬЗОВАНИЕ БИБЛИОТЕКИ =====
 local MyUI = Fluent.new()
 MyUI:AddSidebarButton("💰 AutoFarm", function() print("Открыта главная вкладка") end)
 MyUI:AddSidebarButton("⚙️ Settings", function() print("Открыты настройки") end)
