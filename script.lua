@@ -48,13 +48,16 @@ end
 function Fluent.new()
     local self = setmetatable({}, Fluent)
     local isMobile = UserInputService.TouchEnabled and not UserInputService.MouseEnabled
+    local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
+    -- Создаём ScreenGui
     self.ScreenGui = Create("ScreenGui", {
         Name = "FluentUI_" .. math.random(1000, 9999),
         ZIndexBehavior = Enum.ZIndexBehavior.Global,
         ResetOnSpawn = false,
     })
 
+    -- Размер, позиция и AnchorPoint
     local mainFrameSize, mainFramePosition, mainFrameAnchorPoint
     if isMobile then
         mainFrameSize = UDim2.new(0, 500, 0, 300)
@@ -66,52 +69,107 @@ function Fluent.new()
         mainFrameAnchorPoint = Vector2.new(0.5, 0.5)
     end
 
+    -- Главный фрейм
     self.MainFrame = Create("Frame", {
-        Name = "MainFrame", Parent = self.ScreenGui, Size = mainFrameSize,
-        Position = mainFramePosition, AnchorPoint = mainFrameAnchorPoint,
-        BackgroundColor3 = Config.Colors.Background, BorderSizePixel = 0, ClipsDescendants = true, Visible = true,
-        Children = {
-            Create("UIAspectRatioConstraint", {
-                AspectRatio = Config.WindowSize.X / Config.WindowSize.Y,
-                DominantAxis = Enum.DominantAxis.Width,
-            }),
-            Create("UICorner", { CornerRadius = UDim.new(0, Config.Rounding) }),
-            Create("UIStroke", { Color = Config.Colors.Border, Thickness = 1.5 }),
-        },
+        Name = "MainFrame",
+        Parent = self.ScreenGui,
+        Size = mainFrameSize,
+        Position = mainFramePosition,
+        AnchorPoint = mainFrameAnchorPoint,
+        BackgroundColor3 = Config.Colors.Background,
+        BorderSizePixel = 0,
+        ClipsDescendants = true,
+        Visible = true,
     })
-    
-    self.DragFrame = Create("Frame", { Name = "DragFrame", Parent = self.MainFrame, Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1 })
-    self.Sidebar = Create("Frame", { Name = "SidebarContainer", Parent = self.MainFrame, Size = UDim2.new(0, 180, 1, 0), BackgroundTransparency = 1, BorderSizePixel = 0, ClipsDescendants = true })
 
-    Create("Frame", { Parent = self.Sidebar, Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Config.Colors.Secondary, BorderSizePixel = 0,
+    -- Добавляем AspectRatio только на ПК
+    if not isMobile then
+        Create("UIAspectRatioConstraint", {
+            Parent = self.MainFrame,
+            AspectRatio = Config.WindowSize.X / Config.WindowSize.Y,
+            DominantAxis = Enum.DominantAxis.Width,
+        })
+    end
+
+    -- Остальные элементы
+    Create("UICorner", { Parent = self.MainFrame, CornerRadius = UDim.new(0, Config.Rounding) })
+    Create("UIStroke", { Parent = self.MainFrame, Color = Config.Colors.Border, Thickness = 1.5 })
+
+    self.DragFrame = Create("Frame", {
+        Name = "DragFrame",
+        Parent = self.MainFrame,
+        Size = UDim2.new(1, 0, 0, 40),
+        BackgroundTransparency = 1,
+    })
+
+    self.Sidebar = Create("Frame", {
+        Name = "SidebarContainer",
+        Parent = self.MainFrame,
+        Size = UDim2.new(0, 180, 1, 0),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ClipsDescendants = true,
+    })
+
+    Create("Frame", {
+        Parent = self.Sidebar,
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundColor3 = Config.Colors.Secondary,
+        BorderSizePixel = 0,
         Children = {
             Create("UICorner", { CornerRadius = UDim.new(0, Config.Rounding) }),
-            Create("Frame", { Name = "RightCornerCover", BackgroundColor3 = Config.Colors.Secondary, BorderSizePixel = 0, Size = UDim2.new(0, Config.Rounding, 1, 0), Position = UDim2.new(1, 0, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5) })
+            Create("Frame", {
+                Name = "RightCornerCover",
+                BackgroundColor3 = Config.Colors.Secondary,
+                BorderSizePixel = 0,
+                Size = UDim2.new(0, Config.Rounding, 1, 0),
+                Position = UDim2.new(1, 0, 0.5, 0),
+                AnchorPoint = Vector2.new(1, 0.5),
+            })
         }
     })
-    
+
     self.SidebarButtonContainer = Create("ScrollingFrame", {
-        Name = "ButtonContainer", Parent = self.Sidebar, Size = UDim2.new(1, 0, 1, -60), BackgroundTransparency = 1,
-        BorderSizePixel = 0, CanvasSize = UDim2.new(0,0,0,0), ScrollBarThickness = 3, ScrollBarImageColor3 = Config.AccentColor,
+        Name = "ButtonContainer",
+        Parent = self.Sidebar,
+        Size = UDim2.new(1, 0, 1, -60),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        CanvasSize = UDim2.new(0,0,0,0),
+        ScrollBarThickness = 3,
+        ScrollBarImageColor3 = Config.AccentColor,
         Children = {
             Create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Center, FillDirection = Enum.FillDirection.Vertical }),
-            Create("UIPadding", { PaddingTop = UDim.new(0, 12) })
+            Create("UIPadding", { PaddingTop = UDim.new(0, 12) }),
         }
     })
 
     self.ContentFrame = Create("ScrollingFrame", {
-        Name = "ContentFrame", Parent = self.MainFrame, Size = UDim2.new(1, -180, 1, -40), Position = UDim2.new(0, 180, 0, 40), BackgroundTransparency = 1,
-        BorderSizePixel = 0, ScrollBarThickness = 6, ScrollBarImageColor3 = Config.AccentColor,
+        Name = "ContentFrame",
+        Parent = self.MainFrame,
+        Size = UDim2.new(1, -180, 1, -40),
+        Position = UDim2.new(0, 180, 0, 40),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        ScrollBarThickness = 6,
+        ScrollBarImageColor3 = Config.AccentColor,
         Children = {
             Create("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }),
-            Create("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) })
+            Create("UIPadding", { PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }),
         }
     })
 
     self.TitleLabel = Create("TextLabel", {
-        Name = "TitleLabel", Parent = self.MainFrame, Size = UDim2.new(1, -250, 0, 40), Position = UDim2.new(0.5, 0, 0, 0),
-        AnchorPoint = Vector2.new(0.5, 0), BackgroundTransparency = 1, Font = Config.Fonts.Title, Text = Config.Title,
-        TextColor3 = Config.Colors.Text, TextSize = 20,
+        Name = "TitleLabel",
+        Parent = self.MainFrame,
+        Size = UDim2.new(1, -250, 0, 40),
+        Position = UDim2.new(0.5, 0, 0, 0),
+        AnchorPoint = Vector2.new(0.5, 0),
+        BackgroundTransparency = 1,
+        Font = Config.Fonts.Title,
+        Text = Config.Title,
+        TextColor3 = Config.Colors.Text,
+        TextSize = 20,
     })
 
     self:SetupWindowControls()
@@ -120,6 +178,7 @@ function Fluent.new()
     self.ScreenGui.Parent = playerGui
     return self
 end
+
 
 function Fluent:SetupWindowControls()
     local controlsFrame = Create("Frame", {
