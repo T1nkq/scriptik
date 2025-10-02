@@ -1,22 +1,13 @@
-﻿--[[
-    UI Library: Fluent
-    Version: 4.4 (Layout Fix)
-    Description: A minimal, non-animated UI library with all elements correctly displayed.
-]]
-
---// Сервисы и переменные
-local UserInputService = game:GetService("UserInputService")
+﻿local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 local localPlayer = Players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 
---// Библиотека UI
 local Fluent = {}
 Fluent.__index = Fluent
 
---// Конфигурация стиля
 local Config = {
     Title = "Project Fluent",
     WindowSize = Vector2.new(620, 450),
@@ -40,7 +31,6 @@ local Config = {
     AnimationSpeed = 0,
 }
 
---// Вспомогательная функция для создания элементов
 local function Create(className, properties)
     local element = Instance.new(className)
     local children = properties.Children
@@ -56,7 +46,6 @@ local function Create(className, properties)
     return element
 end
 
---// Конструктор UI
 function Fluent.new()
     local self = setmetatable({}, Fluent)
     self.ScreenGui = Create("ScreenGui", {
@@ -87,7 +76,6 @@ function Fluent.new()
         BackgroundTransparency = 1,
     })
 
-    -- Контейнер для всей боковой панели
     self.Sidebar = Create("Frame", {
         Name = "SidebarContainer",
         Parent = self.MainFrame,
@@ -97,7 +85,6 @@ function Fluent.new()
         ClipsDescendants = true,
     })
 
-    -- Фон с хаком для углов
     Create("Frame", {
         Parent = self.Sidebar,
         Size = UDim2.new(1, 0, 1, 0),
@@ -116,11 +103,10 @@ function Fluent.new()
         }
     })
     
-    -- ИЗМЕНЕНИЕ: Контейнер для кнопок, который оставляет место для панели юзера
     self.SidebarButtonContainer = Create("ScrollingFrame", {
         Name = "ButtonContainer",
         Parent = self.Sidebar,
-        Size = UDim2.new(1, 0, 1, -60), -- Оставляем 60px снизу
+        Size = UDim2.new(1, 0, 1, -60),
         BackgroundTransparency = 1,
         BorderSizePixel = 0,
         CanvasSize = UDim2.new(0,0,0,0),
@@ -166,7 +152,7 @@ function Fluent.new()
     })
 
     self:SetupWindowControls()
-    self:SetupUserPanel() -- Теперь эта функция добавит панель в правильное место
+    self:SetupUserPanel()
     self:MakeDraggable(self.MainFrame, self.DragFrame)
     self.ScreenGui.Parent = playerGui
     return self
@@ -201,14 +187,13 @@ function Fluent:SetupWindowControls()
     self:MakeDraggable(self.RestoreButton, self.RestoreButton)
 end
 
--- ИЗМЕНЕНИЕ: Панель пользователя теперь добавляется в основной контейнер Sidebar, а не в контейнер кнопок
 function Fluent:SetupUserPanel()
     local userFrame = Create("Frame", {
         Name = "UserPanel",
-        Parent = self.Sidebar, -- Родитель - главный контейнер
+        Parent = self.Sidebar,
         Size = UDim2.new(1, 0, 0, 60),
         BackgroundTransparency = 1,
-        Position = UDim2.new(0.5, 0, 1, 0), -- Позиция внизу
+        Position = UDim2.new(0.5, 0, 1, 0),
         AnchorPoint = Vector2.new(0.5, 1)
     })
     local avatar = Create("ImageLabel", {
@@ -285,7 +270,6 @@ function Fluent:CreateButton(props)
     return btn
 end
 
---// ===== ИСПОЛЬЗОВАНИЕ БИБЛИОТЕКИ =====
 local MyUI = Fluent.new()
 MyUI:AddSidebarButton("💰 AutoFarm", function() print("Открыта главная вкладка") end)
 MyUI:AddSidebarButton("⚙️ Settings", function() print("Открыты настройки") end)
