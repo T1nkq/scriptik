@@ -2,9 +2,13 @@ local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-
+local AutoCtx = nil
 local localPlayer = Players.LocalPlayer
+local player = localPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fluent = {}
 Fluent.__index = Fluent
@@ -61,6 +65,14 @@ local function AttachStrokeGradient(uiStroke)
     })
     grad.Parent = uiStroke
     return grad
+end
+
+local function pressKey(key)
+    if humanoid.Health <= 0 then return end
+    local vim = game:GetService("VirtualInputManager")
+    vim:SendKeyEvent(true, key, false, game)
+    wait(0.1)
+    vim:SendKeyEvent(false, key, false, game)
 end
 
 local function CreateIconButton(CreateFn, ConfigTbl, props)
@@ -151,6 +163,89 @@ local function ToggleButton(button, opts)
         On = function() if not state then setVisual(true); safeCall(opts.onStart) end end,
         Off = function() if state then setVisual(false); safeCall(opts.onStop) end end
     }
+end
+
+local function findGuiWithText(root, text)
+    for _, inst in ipairs(root:GetDescendants()) do
+        if (inst:IsA("TextButton") or inst:IsA("TextLabel")) and inst.Text and inst.Text == text then
+            return inst
+        end
+    end
+    return nil
+end
+
+local RunService = game:GetService("RunService")
+
+local function GoMove(pos: Vector3, timeoutSec: number?, walkSpeed: number?)
+    local char = player.Character or player.CharacterAdded:Wait()
+    local hum = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid")
+    local hrp = char:FindFirstChild("HumanoidRootPart") or char:WaitForChild("HumanoidRootPart")
+
+    local oldSpeed = hum.WalkSpeed
+    if walkSpeed then hum.WalkSpeed = walkSpeed end
+
+    local arrived = false
+    local t0 = os.clock()
+    local to = timeoutSec or 10
+
+    local conn
+    conn = hum.MoveToFinished:Connect(function(reached) arrived = reached end)
+    hum:MoveTo(pos)
+
+    while not arrived and os.clock() - t0 < to do
+        if (hrp.Position - pos).Magnitude > 4 then
+            hum:MoveTo(pos) -- переподтверждаем цель [web:111]
+        end
+        RunService.Heartbeat:Wait()
+    end
+
+    if conn then conn:Disconnect() end
+    hum.WalkSpeed = oldSpeed
+    return arrived
+end
+
+local function GoMoveEvery(ctx, pos, onArrived)
+    task.spawn(function()
+        while not ctx.stopFlag do
+            local ok = GoMove(pos, 12, 60)
+            if ok then
+                pcall(onArrived)
+            else
+                warn("[GoMove] timeout/blocked, retry after cooldown")
+            end
+            local t = 300
+            while t > 0 and not ctx.stopFlag do
+                task.wait(0.5)
+                t -= 0.5
+            end
+        end
+    end)
+end
+
+
+local function StartAutoFarmLoop(ctx)
+    local UIS = game:GetService("UserInputService")
+    local TARGET_POS = Vector3.new(46.06, 9.26, 652.96) -- твоя цель [web:111]
+
+    local function pressE()
+        UIS.InputBegan:Fire({KeyCode = Enum.KeyCode.E, UserInputType = Enum.UserInputType.Keyboard}, false)
+        task.wait(0.05)
+        UIS.InputEnded:Fire({KeyCode = Enum.KeyCode.E, UserInputType = Enum.UserInputType.Keyboard}, false)
+    end
+
+    -- идти к точке -> нажать E -> ждать 5 минут (внутри GoMoveEvery)
+    GoMoveEvery(ctx, TARGET_POS, function()
+		pressKey(Enum.KeyCode.E)
+    end)
+end
+
+-- Остановка: флаг и отписка соединений [web:111]
+local function StopAutoFarmLoop(ctx)
+    ctx.stopFlag = true
+    for _, c in ipairs(ctx.connections) do
+        if typeof(c) == "RBXScriptConnection" then pcall(function() c:Disconnect() end) end
+    end
+    ctx.connections = {}
 end
 
 function Fluent.new()
@@ -377,16 +472,19 @@ function Fluent.new()
         BackgroundColor = Config.Colors.Secondary,
         OnClick = function() end
     })
-    self.AutoFarmController = ToggleButton(startStopBtn, {
-        startText = "🚀 Запустить Auto Farm",
-        stopText  = "⛔ Остановить Auto Farm",
-        onStart = function()
-            warn("Auto Farm активирован")
-        end,
-        onStop = function()
-            warn("Auto Farm остановлен")
-        end
-    })
+	self.AutoFarmController = ToggleButton(startStopBtn, {
+		startText = "🚀 Запустить Auto Farm",
+		stopText  = "⛔ Остановить Auto Farm",
+		onStart = function()
+			warn("Auto Farm активирован")
+			AutoCtx = { stopFlag = false }
+			StartAutoFarmLoop(AutoCtx) -- запуск цикла [web:111]
+		end,
+		onStop = function()
+			warn("Auto Farm остановлен")
+			if AutoCtx then AutoCtx.stopFlag = true end -- корректная остановка [web:111]
+		end
+	})
 
     self.Page_Settings = Create("Frame", {
         Name = "Page_Settings",
@@ -418,13 +516,7 @@ function Fluent.new()
     self.Btn_Settings  = addNavButton("⚙️ Autofarm Settings", self.Page_Settings)
     self.Btn_Autofarm_Settings  = addNavButton("⚙️ Settings", self.Page_Settings)
 
-    self:CreateButton({
-        Parent = self.Page_Main,
-        Size = UDim2.new(1, -20, 0, 38),
-        Text = "🚀 Запустить Auto Farm",
-        BackgroundColor = Config.Colors.Secondary,
-        OnClick = function() warn("Auto Farm активирован") end
-    })
+
     self:CreateButton({
         Parent = self.Page_Main,
         Size = UDim2.new(1, -20, 0, 38),
@@ -553,6 +645,4 @@ function Fluent:CreateButton(props)
     return btn
 end
 
-
--- Инициализация
 local MyUI = Fluent.new()
