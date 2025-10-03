@@ -1,6 +1,4 @@
--- Полный рабочий код со слайдами справа и навигацией слева
-
-local UserInputService = game:GetService("UserInputService") -- ввод [web:72]
+local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -48,8 +46,7 @@ local function Create(className, properties)
     return element
 end
 
--- Блик на обводке [web:41]
-local function AttachStrokeGradient(uiStroke: UIStroke)
+local function AttachStrokeGradient(uiStroke)
     local grad = Instance.new("UIGradient")
     grad.Color = ColorSequence.new({
         ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
@@ -66,7 +63,6 @@ local function AttachStrokeGradient(uiStroke: UIStroke)
     return grad
 end
 
--- Иконка в топбаре [web:85]
 local function CreateIconButton(CreateFn, ConfigTbl, props)
     local btn = CreateFn("TextButton", {
         Parent = props.Parent,
@@ -113,6 +109,50 @@ local function CreateIconButton(CreateFn, ConfigTbl, props)
     return btn
 end
 
+local function ToggleButton(button, opts)
+    local state, busy = false, false
+    button.Text = opts.startText or "Запустить"
+
+    local function setVisual(on)
+        state = on
+        if state then
+            button.Text = opts.stopText or "Остановить"
+        else
+            button.Text = opts.startText or "Запустить"
+        end
+    end
+
+    local function safeCall(fn)
+        if typeof(fn) == "function" then
+            local ok, err = pcall(fn)
+            if not ok then warn(err) end
+        end
+    end
+
+    button.MouseButton1Click:Connect(function()
+        if busy then return end
+        busy = true
+        if not state then
+            setVisual(true);  safeCall(opts.onStart)
+        else
+            setVisual(false); safeCall(opts.onStop)
+        end
+        task.delay(0.15, function() busy = false end)
+    end)
+
+    return {
+        Set = function(on)
+            if state ~= on then
+                setVisual(on)
+                if on then safeCall(opts.onStart) else safeCall(opts.onStop) end
+            end
+        end,
+        Get = function() return state end,
+        On = function() if not state then setVisual(true); safeCall(opts.onStart) end end,
+        Off = function() if state then setVisual(false); safeCall(opts.onStop) end end
+    }
+end
+
 function Fluent.new()
     local self = setmetatable({}, Fluent)
     local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -139,9 +179,8 @@ function Fluent.new()
         }
     })
     local outerStroke = self.MainFrame:FindFirstChildOfClass("UIStroke")
-    if outerStroke then AttachStrokeGradient(outerStroke) end -- блик [web:41]
+    if outerStroke then AttachStrokeGradient(outerStroke) end
 
-    -- Top Bar без табов
     self.TopBar = Create("Frame", {
         Name = "TopBar",
         Parent = self.MainFrame,
@@ -248,7 +287,6 @@ function Fluent.new()
         end)
     end
 
-    -- Sidebar слева: кнопки-вкладки
     self.Sidebar = Create("Frame", {
         Name = "SidebarContainer",
         Parent = self.MainFrame,
@@ -293,7 +331,6 @@ function Fluent.new()
         }
     })
 
-    -- Content справа: страницы с UIPageLayout
     self.ContentFrame = Create("Frame", {
         Name = "ContentFrame",
         Parent = self.MainFrame,
@@ -309,7 +346,7 @@ function Fluent.new()
         Parent = self.ContentFrame,
         Size = UDim2.fromScale(1,1),
         BackgroundTransparency = 1,
-        ClipsDescendants = true, -- не торчат страницы [web:72]
+        ClipsDescendants = true,
     })
 
     self.UIPageLayout = Create("UIPageLayout", {
@@ -320,11 +357,11 @@ function Fluent.new()
         EasingDirection = Enum.EasingDirection.Out,
         Circular = false,
         ScrollWheelInputEnabled = true,
-        TouchInputEnabled = true, -- swipe/скролл [web:38]
+        TouchInputEnabled = true,
     })
 
-    self.Page_AutoFarm = Create("Frame", {
-        Name = "Page_AutoFarm",
+    self.Page_Main = Create("Frame", {
+        Name = "Page_Main",
         Parent = self.PagesHolder,
         Size = UDim2.fromScale(1,1),
         BackgroundTransparency = 1,
@@ -332,6 +369,23 @@ function Fluent.new()
             Create("UIListLayout", { Padding = UDim.new(0,10), SortOrder = Enum.SortOrder.LayoutOrder }),
             Create("UIPadding", { PaddingLeft = UDim.new(0,10), PaddingRight = UDim.new(0,10), PaddingTop = UDim.new(0,10) }),
         }
+    })
+    local startStopBtn = self:CreateButton({
+        Parent = self.Page_Main,
+        Size = UDim2.new(1, -20, 0, 38),
+        Text = "🚀 Запустить Auto Farm",
+        BackgroundColor = Config.Colors.Secondary,
+        OnClick = function() end
+    })
+    self.AutoFarmController = ToggleButton(startStopBtn, {
+        startText = "🚀 Запустить Auto Farm",
+        stopText  = "⛔ Остановить Auto Farm",
+        onStart = function()
+            warn("Auto Farm активирован")
+        end,
+        onStop = function()
+            warn("Auto Farm остановлен")
+        end
     })
 
     self.Page_Settings = Create("Frame", {
@@ -345,7 +399,6 @@ function Fluent.new()
         }
     })
 
-    -- Кнопки в левом сайдбаре переключают страницы [web:50]
     local function addNavButton(label, targetPage)
         local button = self:CreateButton({
             Parent = self.SidebarButtonContainer,
@@ -353,7 +406,7 @@ function Fluent.new()
             Text = label,
             BackgroundColor = Config.Colors.Tertiary,
             OnClick = function()
-                self.UIPageLayout:JumpTo(targetPage) -- плавный переход [web:57]
+                self.UIPageLayout:JumpTo(targetPage)
             end
         })
         RunService.Heartbeat:Wait()
@@ -361,26 +414,19 @@ function Fluent.new()
         return button
     end
 
-    self.Btn_AutoFarm = addNavButton("💰 Auto Farm", self.Page_AutoFarm)
-    self.Btn_Settings  = addNavButton("⚙️ Settings", self.Page_Settings)
+    self.Btn_Main = addNavButton("🖕 Main", self.Page_Main)
+    self.Btn_Settings  = addNavButton("⚙️ Autofarm Settings", self.Page_Settings)
+    self.Btn_Autofarm_Settings  = addNavButton("⚙️ Settings", self.Page_Settings)
 
-    -- Содержимое страниц (пример)
     self:CreateButton({
-        Parent = self.Page_AutoFarm,
+        Parent = self.Page_Main,
         Size = UDim2.new(1, -20, 0, 38),
         Text = "🚀 Запустить Auto Farm",
         BackgroundColor = Config.Colors.Secondary,
         OnClick = function() warn("Auto Farm активирован") end
     })
     self:CreateButton({
-        Parent = self.Page_AutoFarm,
-        Size = UDim2.new(1, -20, 0, 38),
-        Text = "💰 Собрать все монеты",
-        BackgroundColor = Config.Colors.Secondary,
-        OnClick = function() warn("Собираем монеты") end
-    })
-    self:CreateButton({
-        Parent = self.Page_AutoFarm,
+        Parent = self.Page_Main,
         Size = UDim2.new(1, -20, 0, 38),
         Text = "⚡ Включить Speed Hack",
         BackgroundColor = Config.Colors.Secondary,
@@ -402,7 +448,6 @@ function Fluent.new()
         OnClick = function() warn("Переключение автосохранения") end
     })
 
-    -- Подсветка активной кнопки в сайдбаре
     local activeBtn: TextButton? = nil
     local function setActive(btn: TextButton)
         if activeBtn and activeBtn ~= btn then
@@ -414,13 +459,12 @@ function Fluent.new()
         activeBtn.TextColor3 = Config.Colors.Text
     end
 
-    -- Привязать клик к подсветке
-    self.Btn_AutoFarm.MouseButton1Click:Connect(function() setActive(self.Btn_AutoFarm) end)
+    self.Btn_Main.MouseButton1Click:Connect(function() setActive(self.Btn_Main) end)
     self.Btn_Settings.MouseButton1Click:Connect(function() setActive(self.Btn_Settings) end)
+    self.Btn_Autofarm_Settings.MouseButton1Click:Connect(function() setActive(self.Btn_Autofarm_Settings) end)
 
-    -- Инициализация страницы и подсветки
-    self.UIPageLayout:JumpTo(self.Page_AutoFarm) -- старт с Auto Farm [web:72]
-    setActive(self.Btn_AutoFarm)
+    self.UIPageLayout:JumpTo(self.Page_Main)
+    setActive(self.Btn_Main)
 
     self:SetupUserPanel()
     self:MakeDraggable(self.MainFrame, self.TopBar)
@@ -508,6 +552,7 @@ function Fluent:CreateButton(props)
 
     return btn
 end
+
 
 -- Инициализация
 local MyUI = Fluent.new()
