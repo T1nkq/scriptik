@@ -212,6 +212,7 @@ local PLOT_POS = {
 }
 
 local SeedsCatalog = {
+    { ui = "Cactus Seed",              id = "CactusSeed" },
     { ui = "Grape Seed",              id = "GrapeSeed" },
     { ui = "Cocotank Seed",           id = "CocotankSeed" },
     { ui = "Carnivorous Plant Seed",  id = "CarnivorousPlantSeed" },
