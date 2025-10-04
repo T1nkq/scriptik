@@ -67,6 +67,7 @@ local function AttachStrokeGradient(uiStroke)
     return grad
 end
 
+-- ⭐ UI HELPER ФУНКЦИИ (определяем ПЕРЕД их использованием)
 local function CreateIconButton(CreateFn, ConfigTbl, props)
     local btn = CreateFn("TextButton", {
         Parent = props.Parent,
@@ -217,6 +218,7 @@ local SeedsCatalog = {
     { ui = "Mr Carrot Seed",          id = "MrCarrotSeed" },
     { ui = "Tomatrio Seed",           id = "TomatrioSeed" },
     { ui = "Shroombino Seed",         id = "ShroombinoSeed" },
+	{ ui = "Mango Seed",         id = "MangoSeed" },
 }
 
 local SelectedSeeds = {}
@@ -328,7 +330,7 @@ end
 local function containsRestockText(gui)
     if (gui:IsA("TextLabel") or gui:IsA("TextButton")) and gui.Text then
         local t = gui.Text
-        if t:find("Your Plants Store has been restocked") or t:find("Your Gear Store has been restocked") then
+        if t:find("Your Plants Shop has been restocked") or t:find("Your Gear Shop has been restocked") then
             return true
         end
     end
