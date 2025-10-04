@@ -35,7 +35,6 @@ local Config = {
     Rounding = 10,
 }
 
--- ⭐ БАЗОВЫЕ HELPER ФУНКЦИИ (определяем в самом начале)
 local function Create(className, properties)
     local element = Instance.new(className)
     local children = properties.Children
@@ -68,7 +67,6 @@ local function AttachStrokeGradient(uiStroke)
     return grad
 end
 
--- ⭐ UI HELPER ФУНКЦИИ (определяем ПЕРЕД их использованием)
 local function CreateIconButton(CreateFn, ConfigTbl, props)
     local btn = CreateFn("TextButton", {
         Parent = props.Parent,
@@ -330,7 +328,7 @@ end
 local function containsRestockText(gui)
     if (gui:IsA("TextLabel") or gui:IsA("TextButton")) and gui.Text then
         local t = gui.Text
-        if t:find("Your Seeds Store has been restocked") or t:find("Your Gears Store has been restocked") then
+        if t:find("Your Plants Store has been restocked") or t:find("Your Gear Store has been restocked") then
             return true
         end
     end
