@@ -744,6 +744,7 @@ function Fluent.new()
             Size = UDim2.new(1, -20, 0, 0),
             BackgroundTransparency = 1,
             Visible = false,
+            ClipsDescendants = true,
         })
 
         local panel = Create("ScrollingFrame", {
@@ -761,12 +762,30 @@ function Fluent.new()
             }
         })
 
+        local panelLayout = panel:FindFirstChildOfClass("UIListLayout")
+
+        if panelLayout then
+            panelLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                panel.CanvasSize = UDim2.new(0, 0, 0, panelLayout.AbsoluteContentSize.Y)
+                RunService.Heartbeat:Wait()
+                self.SidebarButtonContainer.CanvasSize = UDim2.new(0, 0, 0, self.SidebarButtonContainer.UIListLayout.AbsoluteContentSize.Y)
+                if wrap.Visible then
+                    local desired = panelLayout.AbsoluteContentSize.Y + 12
+                    wrap.Size = UDim2.new(1, -20, 0, math.clamp(desired, 0, 420))
+                end
+            end)
+        end
+
         local opened = false
         local function togglePanel()
             opened = not opened
             wrap.Visible = opened
-            header.Text = opened and "🌱 Выбор семян" or "🌱 Выбор семян"
-            wrap.Size = opened and UDim2.new(1, -20, 0, 250) or UDim2.new(1, -20, 0, 0)
+            -- compute wrap height from content if available, otherwise fallback 250
+            local targetH = 250
+            if panelLayout and panelLayout.AbsoluteContentSize.Y > 0 then
+                targetH = math.clamp(panelLayout.AbsoluteContentSize.Y + 12, 0, 420)
+            end
+            wrap.Size = opened and UDim2.new(1, -20, 0, targetH) or UDim2.new(1, -20, 0, 0)
             RunService.Heartbeat:Wait()
             self.SidebarButtonContainer.CanvasSize = UDim2.new(0,0,0, self.SidebarButtonContainer.UIListLayout.AbsoluteContentSize.Y)
         end
@@ -786,11 +805,31 @@ function Fluent.new()
                 btn.Text = (SelectedSeeds[item.ui] and "✔️ " or "❌ ") .. item.ui
             end)
         end
-        
+
+        -- create a proper countFrame and textbox for purchase count
+        local countFrame = Create("Frame", {
+            Parent = panel,
+            Size = UDim2.new(1, -20, 0, 36),
+            BackgroundTransparency = 1,
+            LayoutOrder = 999,
+        })
+        Create("UIListLayout", { Parent = countFrame, FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 6) })
+
+        local countLabel = Create("TextLabel", {
+            Parent = countFrame,
+            Size = UDim2.new(0.55, 0, 1, 0),
+            BackgroundTransparency = 1,
+            Font = Config.Fonts.Body,
+            TextColor3 = Config.Colors.Text,
+            Text = "Кол-во покупок:",
+            TextSize = 16,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Center,
+        })
+
         local countInput = Create("TextBox", {
             Parent = countFrame,
-            Size = UDim2.new(0.4, -5, 1, 0),
-            Position = UDim2.new(0.6, 5, 0, 0),
+            Size = UDim2.new(0.4, 0, 1, 0),
             BackgroundColor3 = Config.Colors.Background,
             Font = Config.Fonts.Body,
             TextColor3 = Config.Colors.Text,
@@ -814,7 +853,7 @@ function Fluent.new()
 
         self:CreateButton({
             Parent = panel,
-            LayoutOrder = 100,
+            LayoutOrder = 1000,
             Size = UDim2.new(1, -20, 0, 34),
             Text = "🛒 Купить выбранные",
             BackgroundColor = Config.Colors.Secondary,
