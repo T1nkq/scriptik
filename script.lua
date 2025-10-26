@@ -217,6 +217,7 @@ local SeedsCatalog = {
     { ui = "Tomatrio Seed",           id = "TomatrioSeed" },
     { ui = "Shroombino Seed",         id = "ShroombinoSeed" },
 	{ ui = "Mango Seed",         id = "MangoSeed" },
+	{ ui = "King Limone Seed",         id = "KingLimoneSeed" },
 }
 
 local SelectedSeeds = {}
