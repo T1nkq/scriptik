@@ -67,7 +67,6 @@ local function AttachStrokeGradient(uiStroke)
     return grad
 end
 
--- ⭐ UI HELPER ФУНКЦИИ (определяем ПЕРЕД их использованием)
 local function CreateIconButton(CreateFn, ConfigTbl, props)
     local btn = CreateFn("TextButton", {
         Parent = props.Parent,
@@ -158,7 +157,6 @@ local function ToggleButton(button, opts)
     }
 end
 
--- ⭐ ИГРОВЫЕ ФУНКЦИИ
 local function teleport(pos)
     if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
         player.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
@@ -229,7 +227,6 @@ local Remotes = RS:FindFirstChild("Remotes") or RS
 local BuyItem   = Remotes:FindFirstChild("BuyItem")
 local BuyRow    = Remotes:FindFirstChild("BuyRow")
 
--- ⭐ ФУНКЦИИ ПОКУПКИ
 local function purchaseSeed(uiName)
     local currency = "Cash"
     local altId = nil
@@ -295,11 +292,11 @@ local function autoPurchaseSelected()
                 if AutoCtx and AutoCtx.stopFlag then break end
                 
                 purchaseSeed(seedName)
-                task.wait(0.5) -- Задержка между покупками
+                task.wait(0.5)
             end
             
             if round < PurchaseCount then
-                task.wait(1) -- Задержка между раундами
+                task.wait(1)
             end
         end
         
@@ -307,7 +304,6 @@ local function autoPurchaseSelected()
     end)
 end
 
--- ⭐ АВТОФАРМ ФУНКЦИИ
 local function getTargetPosForMyPlot()
     local idx = getMyPlotIndex()
     if idx and PLOT_POS[idx] then
@@ -400,7 +396,6 @@ local function StopAutoFarmLoop(ctx)
     end
 end
 
--- ⭐ ФУНКЦИИ UI (определяем ПЕРЕД созданием UI)
 function Fluent:CreateButton(props)
     local btn = Create("TextButton", {
         Parent = props.Parent, Name = props.Name or "Button", Size = props.Size, Position = props.Position,
@@ -481,7 +476,6 @@ function Fluent:MakeDraggable(guiObject, dragArea)
     end)
 end
 
--- ⭐ ОСНОВНАЯ ФУНКЦИЯ UI
 function Fluent.new()
     local self = setmetatable({}, Fluent)
     local playerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -594,7 +588,6 @@ function Fluent.new()
         }
     })
     
-    -- Drag functionality for RestoreButton
     do
         local dragging, dragStart, startPos
         local function update(input)
@@ -691,7 +684,6 @@ function Fluent.new()
         TouchInputEnabled = true,
     })
 
-    -- MAIN PAGE
     self.Page_Main = Create("Frame", {
         Name = "Page_Main",
         Parent = self.PagesHolder,
@@ -725,7 +717,6 @@ function Fluent.new()
         end
     })
 
-    -- SETTINGS PAGE
     self.Page_Settings = Create("Frame", {
         Name = "Page_Settings",
         Parent = self.PagesHolder,
@@ -820,7 +811,6 @@ function Fluent.new()
             countInput.Text = tostring(PurchaseCount)
         end)
 
-        -- Buy button
         self:CreateButton({
             Parent = panel,
             LayoutOrder = 100,
@@ -833,7 +823,6 @@ function Fluent.new()
         })
     end
     
-    -- Navigation buttons
     local function addNavButton(label, targetPage)
         local button = self:CreateButton({
             Parent = self.SidebarButtonContainer,
@@ -852,7 +841,6 @@ function Fluent.new()
     self.Btn_Main = addNavButton("🖕 Main", self.Page_Main)
     self.Btn_Settings  = addNavButton("⚙️ Autofarm Settings", self.Page_Settings)
 
-    -- Active button system
     local activeBtn = nil
     local function setActive(btn)
         if activeBtn and activeBtn ~= btn then
@@ -877,5 +865,4 @@ function Fluent.new()
     return self
 end
 
--- ⭐ ЗАПУСК UI
 local MyUI = Fluent.new()
