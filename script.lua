@@ -14,7 +14,7 @@ local Fluent = {}
 Fluent.__index = Fluent
 
 local Config = {
-    Title = "T1nkq",
+    Title = "T1nkq1",
     WindowSize = Vector2.new(620, 450),
     AccentColor = Color3.fromRGB(88, 101, 242),
     ErrorColor = Color3.fromRGB(237, 66, 69),
