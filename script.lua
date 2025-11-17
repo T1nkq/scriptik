@@ -1175,16 +1175,12 @@ local function CreateMainUI()
         Parent = infoContent,
         Size = UDim2.new(1, 0, 0, 24),
         BackgroundTransparency = 1,
-        Text = "📦 Версия: 6.0 Premium",
+        Text = "📦 Версия: 1.3",
         Font = Fonts.Regular,
         TextSize = 13,
         TextColor3 = Theme.Text.Secondary,
         TextXAlignment = Enum.TextXAlignment.Left
     })
-
-    -- ================================
-    -- СТРАНИЦА НАСТРОЕК
-    -- ================================
 
     local SettingsPage = Create("ScrollingFrame", {
         Parent = PagesHolder,
