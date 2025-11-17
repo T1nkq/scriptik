@@ -863,7 +863,7 @@ local function CreateMainUI()
         AnchorPoint = Vector2.new(0.5, 0),
         BackgroundTransparency = 1,
         Font = Fonts.Bold,
-        Text = "🚀 Modern Executor",
+        Text = "🚀 T1nkq Scriptik",
         TextColor3 = Theme.Text.Primary,
         TextSize = 18,
         TextXAlignment = Enum.TextXAlignment.Center
@@ -1037,10 +1037,6 @@ local function CreateMainUI()
         ScrollWheelInputEnabled = true,
         TouchInputEnabled = true
     })
-
-    -- ================================
-    -- ГЛАВНАЯ СТРАНИЦА
-    -- ================================
 
     local MainPage = Create("ScrollingFrame", {
         Parent = PagesHolder,
@@ -1436,6 +1432,10 @@ local function CreateMainUI()
     print("✅ t1nkq scriptik загружен!")
     return ScreenGui
 end
+
+-- ================================
+-- ЗАПУСК
+-- ================================
 
 local success, err = pcall(function()
     CreateMainUI()
