@@ -14,7 +14,7 @@ local Fluent = {}
 Fluent.__index = Fluent
 
 local Config = {
-    Title = "T1nkq1",
+    Title = "T1nkq",
     WindowSize = Vector2.new(620, 450),
     AccentColor = Color3.fromRGB(88, 101, 242),
     ErrorColor = Color3.fromRGB(237, 66, 69),
@@ -218,6 +218,7 @@ local SeedsCatalog = {
     { ui = "Shroombino Seed",         id = "ShroombinoSeed" },
 	{ ui = "Mango Seed",         id = "MangoSeed" },
 	{ ui = "King Limone Seed",         id = "KingLimoneSeed" },
+	{ ui = "Starfruit Seed",         id = "StarfruitSeed" },
 }
 
 local SelectedSeeds = {}
