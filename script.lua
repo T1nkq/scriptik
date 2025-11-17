@@ -1,8 +1,3 @@
--- ================================
--- MODERN ROBLOX EXECUTOR UI v3
--- Premium Dark Theme
--- ================================
-
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -15,44 +10,42 @@ local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 
 local AutoCtx = nil
-
--- ================================
--- ПРЕМИУМ ТЕМНАЯ ТЕМА
--- ================================
+local PurchasedCount = 0
+local BuyAttempts = 10
 
 local Theme = {
     Background = {
-        Primary   = Color3.fromRGB(13, 13, 18),       -- Главный фон (очень темный)
-        Secondary = Color3.fromRGB(18, 18, 24),       -- Sidebar
-        Tertiary  = Color3.fromRGB(24, 24, 32),       -- Кнопки/карточки
-        Elevated  = Color3.fromRGB(28, 28, 36),       -- Поднятые элементы
-        Content   = Color3.fromRGB(16, 16, 22),       -- Контент-область
+        Primary   = Color3.fromRGB(13, 13, 18),
+        Secondary = Color3.fromRGB(18, 18, 24),
+        Tertiary  = Color3.fromRGB(24, 24, 32),
+        Elevated  = Color3.fromRGB(28, 28, 36),
+        Content   = Color3.fromRGB(16, 16, 22),
     },
     
     Accent = {
-        Primary   = Color3.fromRGB(88, 101, 242),     -- Discord Blurple
-        Secondary = Color3.fromRGB(114, 137, 218),    
-        Success   = Color3.fromRGB(67, 181, 129),     
-        Warning   = Color3.fromRGB(250, 166, 26),     
-        Error     = Color3.fromRGB(237, 66, 69),      
+        Primary   = Color3.fromRGB(139, 92, 246),
+        Secondary = Color3.fromRGB(167, 139, 250),
+        Success   = Color3.fromRGB(34, 197, 94),
+        Warning   = Color3.fromRGB(251, 146, 60),
+        Error     = Color3.fromRGB(239, 68, 68),
     },
     
     Text = {
-        Primary   = Color3.fromRGB(255, 255, 255),    
-        Secondary = Color3.fromRGB(148, 155, 164),    
-        Disabled  = Color3.fromRGB(79, 84, 92),       
-        OnAccent  = Color3.fromRGB(255, 255, 255),    
+        Primary   = Color3.fromRGB(255, 255, 255),
+        Secondary = Color3.fromRGB(148, 155, 164),
+        Disabled  = Color3.fromRGB(79, 84, 92),
+        OnAccent  = Color3.fromRGB(255, 255, 255),
     },
     
     State = {
-        Hover     = Color3.fromRGB(32, 34, 42),       
-        Active    = Color3.fromRGB(42, 44, 52),       
+        Hover     = Color3.fromRGB(32, 34, 42),
+        Active    = Color3.fromRGB(42, 44, 52),
     },
     
     Border = {
-        Default   = Color3.fromRGB(32, 34, 42),       
-        Subtle    = Color3.fromRGB(26, 28, 36),       
-        Accent    = Color3.fromRGB(88, 101, 242),     
+        Default   = Color3.fromRGB(32, 34, 42),
+        Subtle    = Color3.fromRGB(26, 28, 36),
+        Accent    = Color3.fromRGB(139, 92, 246),
     },
 }
 
@@ -69,10 +62,6 @@ local Fonts = {
     Semibold = Enum.Font.GothamSemibold,
     Regular = Enum.Font.Gotham,
 }
-
--- ================================
--- УТИЛИТЫ
--- ================================
 
 local function Create(className, properties)
     local element = Instance.new(className)
@@ -92,9 +81,9 @@ end
 local function ApplyGradientStroke(stroke)
     local gradient = Instance.new("UIGradient")
     gradient.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(88, 101, 242)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(114, 137, 218)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(88, 101, 242)),
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(139, 92, 246)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(167, 139, 250)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(139, 92, 246)),
     })
     gradient.Transparency = NumberSequence.new({
         NumberSequenceKeypoint.new(0, 0.7),
@@ -188,6 +177,12 @@ local PLOT_POS = {
 
 local SeedsCatalog = {
     { ui = "Cactus Seed", id = "CactusSeed" },
+    { ui = "Strawberry Seed", id = "StrawberrySeed" },
+    { ui = "Pumpkin Seed", id = "PumpkinSeed" },
+    { ui = "Sunflower Seed", id = "SunflowerSeed" },
+    { ui = "Dragon Fruit Seed", id = "DragonFruitSeed" },
+    { ui = "Eggplant Seed", id = "EggplantSeed" },
+    { ui = "Watermelon Seed", id = "WatermelonSeed" },
     { ui = "Grape Seed", id = "GrapeSeed" },
     { ui = "Cocotank Seed", id = "CocotankSeed" },
     { ui = "Carnivorous Plant Seed", id = "CarnivorousPlantSeed" },
@@ -199,12 +194,60 @@ local SeedsCatalog = {
     { ui = "Starfruit Seed", id = "StarfruitSeed" },
 }
 
+
 local SelectedSeeds = {}
-local PurchaseCount = 1
 
 local Remotes = ReplicatedStorage:FindFirstChild("Remotes") or ReplicatedStorage
 local BuyItem = Remotes:FindFirstChild("BuyItem")
 local BuyRow = Remotes:FindFirstChild("BuyRow")
+
+local StatusLabel = nil
+local PurchasedLabel = nil
+local PurchaseDetectionConn = nil
+
+local function setupPurchaseDetection()
+    if PurchaseDetectionConn then
+        PurchaseDetectionConn:Disconnect()
+    end
+    
+    local function checkPurchaseText(gui)
+        if (gui:IsA("TextLabel") or gui:IsA("TextButton")) and gui.Text then
+            local text = gui.Text
+            -- Проверяем текст на "You bought 1x" или похожие
+            if text:match("You bought 1x") or text:match("You bought") then
+                PurchasedCount = PurchasedCount + 1
+                if PurchasedLabel then
+                    PurchasedLabel.Text = "🌱 Куплено растений: " .. PurchasedCount
+                end
+                print("✅ Куплено! Всего: " .. PurchasedCount)
+            end
+        end
+    end
+    
+    for _, desc in ipairs(playerGui:GetDescendants()) do
+        checkPurchaseText(desc)
+    end
+    
+    PurchaseDetectionConn = playerGui.DescendantAdded:Connect(function(inst)
+        task.defer(function()
+            checkPurchaseText(inst)
+            
+            if inst:IsA("TextLabel") or inst:IsA("TextButton") then
+                inst:GetPropertyChangedSignal("Text"):Connect(function()
+                    checkPurchaseText(inst)
+                end)
+            end
+        end)
+    end)
+    
+    for _, desc in ipairs(playerGui:GetDescendants()) do
+        if desc:IsA("TextLabel") or desc:IsA("TextButton") then
+            desc:GetPropertyChangedSignal("Text"):Connect(function()
+                checkPurchaseText(desc)
+            end)
+        end
+    end
+end
 
 local function purchaseSeed(uiName)
     local currency = "Cash"
@@ -223,7 +266,7 @@ local function purchaseSeed(uiName)
     end
 
     if not success and BuyRow then
-        pcall(function() BuyRow:FireServer(uiName, currency) end)
+        success = pcall(function() BuyRow:FireServer(uiName, currency) end)
     end
     
     return success
@@ -240,21 +283,20 @@ local function autoPurchaseSelected()
         return
     end
     
-    print("🛒 Начинаю покупку " .. PurchaseCount .. " раз(а) для " .. #selectedList .. " семян")
+    print("🛒 Начинаю покупку " .. BuyAttempts .. "x для " .. #selectedList .. " семян")
     
     task.spawn(function()
-        for round = 1, PurchaseCount do
+        for _, seedName in ipairs(selectedList) do
             if AutoCtx and AutoCtx.stopFlag then break end
             
-            print("🔄 Раунд покупок " .. round .. "/" .. PurchaseCount)
-            
-            for _, seedName in ipairs(selectedList) do
+            for attempt = 1, BuyAttempts do
                 if AutoCtx and AutoCtx.stopFlag then break end
+                
                 purchaseSeed(seedName)
-                task.wait(0.5)
+                task.wait(0.15)
             end
             
-            if round < PurchaseCount then task.wait(1) end
+            task.wait(0.3)
         end
         
         print("✅ Все покупки завершены!")
@@ -318,6 +360,14 @@ local function hookRestockWatcher(ctx)
 end
 
 local function StartAutoFarmLoop(ctx)
+    if StatusLabel then
+        StatusLabel.Text = "⚡ Статус: Активен • Фармлю растения"
+        StatusLabel.TextColor3 = Theme.Accent.Success
+    end
+    
+    -- Запускаем отслеживание покупок
+    setupPurchaseDetection()
+    
     task.spawn(function()
         while not ctx.stopFlag do
             local target, idx = getTargetPosForMyPlot()
@@ -331,8 +381,8 @@ local function StartAutoFarmLoop(ctx)
 
             local t = 300
             while t > 0 and not ctx.stopFlag do
-                task.wait(0.5)
-                t = t - 0.5
+                task.wait(1)
+                t = t - 1
             end
         end
     end)
@@ -340,6 +390,12 @@ end
 
 local function StopAutoFarmLoop(ctx)
     ctx.stopFlag = true
+    
+    if StatusLabel then
+        StatusLabel.Text = "✅ Статус: Готов к работе"
+        StatusLabel.TextColor3 = Theme.Text.Secondary
+    end
+    
     if ctx.connections then
         for _, c in ipairs(ctx.connections) do
             if typeof(c) == "RBXScriptConnection" then
@@ -347,6 +403,12 @@ local function StopAutoFarmLoop(ctx)
             end
         end
         ctx.connections = {}
+    end
+    
+    -- Останавливаем отслеживание покупок
+    if PurchaseDetectionConn then
+        PurchaseDetectionConn:Disconnect()
+        PurchaseDetectionConn = nil
     end
 end
 
@@ -435,86 +497,6 @@ function UI:CreateButton(props)
     return btn
 end
 
-function UI:CreateToggle(parent, labelText, defaultState, callback)
-    local container = Create("Frame", {
-        Parent = parent,
-        Size = UDim2.new(1, -24, 0, 48),
-        BackgroundColor3 = Theme.Background.Tertiary,
-        BorderSizePixel = 0,
-        Children = {
-            Create("UICorner", { CornerRadius = UDim.new(0, 8) }),
-            Create("UIStroke", {
-                Color = Theme.Border.Default,
-                Thickness = 1,
-                Transparency = 0.8
-            })
-        }
-    })
-
-    local label = Create("TextLabel", {
-        Parent = container,
-        Size = UDim2.new(1, -70, 1, 0),
-        Position = UDim2.fromOffset(12, 0),
-        BackgroundTransparency = 1,
-        Text = labelText,
-        Font = Fonts.Semibold,
-        TextSize = 14,
-        TextColor3 = Theme.Text.Primary,
-        TextXAlignment = Enum.TextXAlignment.Left,
-    })
-
-    local switch = Create("Frame", {
-        Parent = container,
-        Size = UDim2.fromOffset(48, 26),
-        Position = UDim2.new(1, -60, 0.5, 0),
-        AnchorPoint = Vector2.new(0, 0.5),
-        BackgroundColor3 = defaultState and Theme.Accent.Primary or Theme.Background.Secondary,
-        BorderSizePixel = 0,
-        Children = {
-            Create("UICorner", { CornerRadius = UDim.new(1, 0) })
-        }
-    })
-
-    local knob = Create("Frame", {
-        Name = "Knob",
-        Parent = switch,
-        Size = UDim2.fromOffset(20, 20),
-        Position = defaultState and UDim2.new(1, -23, 0.5, 0) or UDim2.fromOffset(3, 0),
-        AnchorPoint = Vector2.new(0, 0.5),
-        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-        BorderSizePixel = 0,
-        Children = {
-            Create("UICorner", { CornerRadius = UDim.new(1, 0) })
-        }
-    })
-
-    local state = defaultState
-    local button = Create("TextButton", {
-        Parent = container,
-        Size = UDim2.fromScale(1, 1),
-        BackgroundTransparency = 1,
-        Text = ""
-    })
-
-    button.MouseButton1Click:Connect(function()
-        state = not state
-        
-        local info = state and Animations.Bounce or Animations.Standard
-        
-        TweenService:Create(switch, Animations.Quick, {
-            BackgroundColor3 = state and Theme.Accent.Primary or Theme.Background.Secondary
-        }):Play()
-        
-        TweenService:Create(knob, info, {
-            Position = state and UDim2.new(1, -23, 0.5, 0) or UDim2.fromOffset(3, 0)
-        }):Play()
-        
-        if callback then callback(state) end
-    end)
-
-    return container, function() return state end
-end
-
 function UI:CreateCheckbox(parent, labelText, defaultChecked, callback)
     local container = Create("Frame", {
         Parent = parent,
@@ -593,10 +575,10 @@ function UI:CreateCheckbox(parent, labelText, defaultChecked, callback)
     return container, function() return checked end
 end
 
-function UI:CreatePanel(parent, titleText, height)
-    local panel = Create("Frame", {
+function UI:CreateCollapsiblePanel(parent, titleText, defaultExpanded)
+    local container = Create("Frame", {
         Parent = parent,
-        Size = UDim2.new(1, -24, 0, height or 200),
+        Size = UDim2.new(1, -24, 0, 48),
         BackgroundColor3 = Theme.Background.Tertiary,
         BorderSizePixel = 0,
         Children = {
@@ -609,35 +591,46 @@ function UI:CreatePanel(parent, titleText, height)
         }
     })
 
-    if titleText then
-        local title = Create("TextLabel", {
-            Parent = panel,
-            Size = UDim2.new(1, -24, 0, 36),
-            Position = UDim2.fromOffset(12, 8),
-            BackgroundTransparency = 1,
-            Text = titleText,
-            Font = Fonts.Bold,
-            TextSize = 15,
-            TextColor3 = Theme.Text.Primary,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            TextYAlignment = Enum.TextYAlignment.Top
-        })
+    local header = Create("TextButton", {
+        Parent = container,
+        Size = UDim2.new(1, 0, 0, 48),
+        BackgroundTransparency = 1,
+        Text = "",
+        AutoButtonColor = false
+    })
 
-        local divider = Create("Frame", {
-            Parent = panel,
-            Size = UDim2.new(1, -24, 0, 1),
-            Position = UDim2.fromOffset(12, 44),
-            BackgroundColor3 = Theme.Border.Default,
-            BackgroundTransparency = 0.7,
-            BorderSizePixel = 0
-        })
-    end
+    local title = Create("TextLabel", {
+        Parent = header,
+        Size = UDim2.new(1, -60, 1, 0),
+        Position = UDim2.fromOffset(12, 0),
+        BackgroundTransparency = 1,
+        Text = titleText,
+        Font = Fonts.Bold,
+        TextSize = 15,
+        TextColor3 = Theme.Text.Primary,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+
+    local arrow = Create("TextLabel", {
+        Parent = header,
+        Size = UDim2.fromOffset(24, 24),
+        Position = UDim2.new(1, -36, 0.5, 0),
+        AnchorPoint = Vector2.new(0, 0.5),
+        BackgroundTransparency = 1,
+        Text = "▼",
+        Font = Fonts.Bold,
+        TextSize = 14,
+        TextColor3 = Theme.Text.Secondary,
+        Rotation = defaultExpanded and 0 or -90
+    })
 
     local content = Create("Frame", {
-        Parent = panel,
-        Size = UDim2.new(1, -24, 1, titleText and -56 or -16),
-        Position = UDim2.fromOffset(12, titleText and 52 or 8),
+        Parent = container,
+        Size = UDim2.new(1, -24, 0, 0),
+        Position = UDim2.fromOffset(12, 52),
         BackgroundTransparency = 1,
+        Visible = defaultExpanded,
+        ClipsDescendants = true,
         Children = {
             Create("UIListLayout", {
                 Padding = UDim.new(0, 8),
@@ -646,77 +639,44 @@ function UI:CreatePanel(parent, titleText, height)
         }
     })
 
-    return panel, content
-end
+    local layout = content:FindFirstChildOfClass("UIListLayout")
+    local expanded = defaultExpanded
 
-function UI:CreateInputField(parent, labelText, placeholderText, defaultText, callback)
-    local container = Create("Frame", {
-        Parent = parent,
-        Size = UDim2.new(1, -24, 0, 44),
-        BackgroundColor3 = Theme.Background.Tertiary,
-        BorderSizePixel = 0,
-        Children = {
-            Create("UICorner", { CornerRadius = UDim.new(0, 8) }),
-            Create("UIStroke", {
-                Color = Theme.Border.Default,
-                Thickness = 1,
-                Transparency = 0.8
-            })
-        }
-    })
-
-    if labelText then
-        Create("TextLabel", {
-            Parent = container,
-            Size = UDim2.new(0.35, 0, 1, 0),
-            Position = UDim2.fromOffset(12, 0),
-            BackgroundTransparency = 1,
-            Text = labelText,
-            Font = Fonts.Semibold,
-            TextSize = 14,
-            TextColor3 = Theme.Text.Primary,
-            TextXAlignment = Enum.TextXAlignment.Left
-        })
+    local function updateSize()
+        if expanded and layout then
+            local contentHeight = layout.AbsoluteContentSize.Y
+            container.Size = UDim2.new(1, -24, 0, 56 + contentHeight)
+            TweenService:Create(content, Animations.Standard, {
+                Size = UDim2.new(1, -24, 0, contentHeight)
+            }):Play()
+        else
+            container.Size = UDim2.new(1, -24, 0, 48)
+            TweenService:Create(content, Animations.Standard, {
+                Size = UDim2.new(1, -24, 0, 0)
+            }):Play()
+        end
     end
 
-    local input = Create("TextBox", {
-        Parent = container,
-        Size = labelText and UDim2.new(0.6, -12, 1, -8) or UDim2.new(1, -24, 1, -8),
-        Position = labelText and UDim2.new(0.4, 0, 0.5, 0) or UDim2.new(0.5, 0, 0.5, 0),
-        AnchorPoint = Vector2.new(0, 0.5),
-        BackgroundTransparency = 1,
-        Text = defaultText or "",
-        PlaceholderText = placeholderText or "",
-        Font = Fonts.Regular,
-        TextSize = 14,
-        TextColor3 = Theme.Text.Primary,
-        PlaceholderColor3 = Theme.Text.Disabled,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ClearTextOnFocus = false
-    })
+    if layout then
+        layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            if expanded then
+                task.defer(updateSize)
+            end
+        end)
+    end
 
-    local stroke = container:FindFirstChildOfClass("UIStroke")
-
-    input.Focused:Connect(function()
-        if stroke then
-            TweenService:Create(stroke, Animations.Quick, {
-                Color = Theme.Accent.Primary,
-                Transparency = 0.3
-            }):Play()
-        end
+    header.MouseButton1Click:Connect(function()
+        expanded = not expanded
+        content.Visible = expanded
+        
+        TweenService:Create(arrow, Animations.Standard, {
+            Rotation = expanded and 0 or -90
+        }):Play()
+        
+        updateSize()
     end)
 
-    input.FocusLost:Connect(function(enterPressed)
-        if stroke then
-            TweenService:Create(stroke, Animations.Quick, {
-                Color = Theme.Border.Default,
-                Transparency = 0.8
-            }):Play()
-        end
-        if callback then callback(input.Text, enterPressed) end
-    end)
-
-    return container, input
+    return container, content, updateSize
 end
 
 function UI:MakeDraggable(guiObject, dragArea)
@@ -788,6 +748,95 @@ local function CreateMainUI()
     local mainStroke = MainFrame:FindFirstChildOfClass("UIStroke")
     if mainStroke then ApplyGradientStroke(mainStroke) end
 
+    -- КНОПКА ВОССТАНОВЛЕНИЯ (появляется при сворачивании)
+    local RestoreButton = Create("Frame", {
+        Parent = ScreenGui,
+        Name = "RestoreButton",
+        Size = UDim2.fromOffset(52, 52),
+        Position = UDim2.fromOffset(20, 20),
+        BackgroundColor3 = Theme.Accent.Primary,
+        BorderSizePixel = 0,
+        Visible = false,
+        Children = {
+            Create("UICorner", { CornerRadius = UDim.new(0, 10) }),
+            Create("UIStroke", {
+                Color = Theme.Border.Accent,
+                Thickness = 1.5,
+                Transparency = 0.5
+            })
+        }
+    })
+
+    local restoreStroke = RestoreButton:FindFirstChildOfClass("UIStroke")
+    if restoreStroke then ApplyGradientStroke(restoreStroke) end
+
+    local restoreIcon = Create("TextLabel", {
+        Parent = RestoreButton,
+        Size = UDim2.fromScale(1, 1),
+        BackgroundTransparency = 1,
+        Text = "🚀",
+        Font = Fonts.Bold,
+        TextSize = 24,
+        TextColor3 = Theme.Text.OnAccent
+    })
+
+    -- Кнопка кликабельна только при коротком клике
+    local restoreBtn = Create("TextButton", {
+        Parent = RestoreButton,
+        Size = UDim2.fromScale(1, 1),
+        BackgroundTransparency = 1,
+        Text = ""
+    })
+
+    local clickStart = nil
+    local isDragging = false
+
+    restoreBtn.MouseButton1Down:Connect(function()
+        clickStart = tick()
+        isDragging = false
+    end)
+
+    restoreBtn.MouseButton1Up:Connect(function()
+        if clickStart and (tick() - clickStart) < 0.2 and not isDragging then
+            -- Короткий клик - открываем окно
+            RestoreButton.Visible = false
+            MainFrame.Visible = true
+        end
+        clickStart = nil
+    end)
+
+    -- Перетаскивание кнопки восстановления
+    local dragging, dragStart, startPos
+    
+    restoreBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+           input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = RestoreButton.Position
+            
+            local conn
+            conn = input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    conn:Disconnect()
+                end
+            end)
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if (input.UserInputType == Enum.UserInputType.MouseMovement or 
+            input.UserInputType == Enum.UserInputType.Touch) and dragging then
+            isDragging = true
+            local delta = input.Position - dragStart
+            RestoreButton.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+
     local TopBar = Create("Frame", {
         Parent = MainFrame,
         Name = "TopBar",
@@ -843,7 +892,7 @@ local function CreateMainUI()
         }
     })
 
-    local MinBtn = UI:CreateButton({
+    UI:CreateButton({
         Parent = TopRight,
         Size = UDim2.fromOffset(32, 32),
         Text = "–",
@@ -851,10 +900,11 @@ local function CreateMainUI()
         BackgroundColor = Theme.Background.Tertiary,
         OnClick = function()
             MainFrame.Visible = false
+            RestoreButton.Visible = true
         end
     })
 
-    local CloseBtn = UI:CreateButton({
+    UI:CreateButton({
         Parent = TopRight,
         Size = UDim2.fromOffset(32, 32),
         Text = "×",
@@ -989,7 +1039,7 @@ local function CreateMainUI()
     })
 
     -- ================================
-    -- СТРАНИЦЫ
+    -- ГЛАВНАЯ СТРАНИЦА
     -- ================================
 
     local MainPage = Create("ScrollingFrame", {
@@ -1042,13 +1092,72 @@ local function CreateMainUI()
         end
     end)
 
-    local infoPanel, infoContent = UI:CreatePanel(MainPage, "📊 Информация", 140)
-    
+    local infoPanel = Create("Frame", {
+        Parent = MainPage,
+        Size = UDim2.new(1, -24, 0, 179),
+        BackgroundColor3 = Theme.Background.Tertiary,
+        BorderSizePixel = 0,
+        Children = {
+            Create("UICorner", { CornerRadius = UDim.new(0, 10) }),
+            Create("UIStroke", {
+                Color = Theme.Border.Subtle,
+                Thickness = 1,
+                Transparency = 0.8
+            })
+        }
+    })
+
     Create("TextLabel", {
+        Parent = infoPanel,
+        Size = UDim2.new(1, -24, 0, 36),
+        Position = UDim2.fromOffset(12, 8),
+        BackgroundTransparency = 1,
+        Text = "📊 Информация",
+        Font = Fonts.Bold,
+        TextSize = 15,
+        TextColor3 = Theme.Text.Primary,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Top
+    })
+
+    Create("Frame", {
+        Parent = infoPanel,
+        Size = UDim2.new(1, -24, 0, 1),
+        Position = UDim2.fromOffset(12, 44),
+        BackgroundColor3 = Theme.Border.Default,
+        BackgroundTransparency = 0.7,
+        BorderSizePixel = 0
+    })
+
+    local infoContent = Create("Frame", {
+        Parent = infoPanel,
+        Size = UDim2.new(1, -24, 1, -56),
+        Position = UDim2.fromOffset(12, 52),
+        BackgroundTransparency = 1,
+        Children = {
+            Create("UIListLayout", {
+                Padding = UDim.new(0, 8),
+                SortOrder = Enum.SortOrder.LayoutOrder
+            })
+        }
+    })
+
+    StatusLabel = Create("TextLabel", {
         Parent = infoContent,
         Size = UDim2.new(1, 0, 0, 24),
         BackgroundTransparency = 1,
         Text = "✅ Статус: Готов к работе",
+        Font = Fonts.Regular,
+        TextSize = 13,
+        TextColor3 = Theme.Text.Secondary,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+
+    PurchasedLabel = Create("TextLabel", {
+        Parent = infoContent,
+        Size = UDim2.new(1, 0, 0, 24),
+        BackgroundTransparency = 1,
+        Text = "🌱 Куплено растений: 0",
         Font = Fonts.Regular,
         TextSize = 13,
         TextColor3 = Theme.Text.Secondary,
@@ -1070,12 +1179,16 @@ local function CreateMainUI()
         Parent = infoContent,
         Size = UDim2.new(1, 0, 0, 24),
         BackgroundTransparency = 1,
-        Text = "📦 Версия: 1.0 Premium",
+        Text = "📦 Версия: 6.0 Premium",
         Font = Fonts.Regular,
         TextSize = 13,
         TextColor3 = Theme.Text.Secondary,
         TextXAlignment = Enum.TextXAlignment.Left
     })
+
+    -- ================================
+    -- СТРАНИЦА НАСТРОЕК
+    -- ================================
 
     local SettingsPage = Create("ScrollingFrame", {
         Parent = PagesHolder,
@@ -1101,60 +1214,26 @@ local function CreateMainUI()
         }
     })
 
-    local seedsPanel, seedsContent = UI:CreatePanel(SettingsPage, "🌱 Выбор семян", 400)
-    
-    local seedsScroll = Create("ScrollingFrame", {
-        Parent = seedsContent,
-        Size = UDim2.new(1, 0, 1, -50),
-        BackgroundTransparency = 1,
-        BorderSizePixel = 0,
-        CanvasSize = UDim2.fromOffset(0, 0),
-        ScrollBarThickness = 4,
-        ScrollBarImageColor3 = Theme.Accent.Primary,
-        AutomaticCanvasSize = Enum.AutomaticSize.Y,
-        Children = {
-            Create("UIListLayout", {
-                Padding = UDim.new(0, 6),
-                SortOrder = Enum.SortOrder.LayoutOrder
-            })
-        }
-    })
+    local seedsPanel, seedsContent, updateSeedsSize = UI:CreateCollapsiblePanel(
+        SettingsPage, 
+        "🌱 Выбор семян для автопокупки", 
+        false
+    )
 
     for _, seed in ipairs(SeedsCatalog) do
         SelectedSeeds[seed.ui] = SelectedSeeds[seed.ui] or false
         
-        UI:CreateCheckbox(seedsScroll, seed.ui, SelectedSeeds[seed.ui], function(checked)
+        UI:CreateCheckbox(seedsContent, seed.ui, SelectedSeeds[seed.ui], function(checked)
             SelectedSeeds[seed.ui] = checked
             print((checked and "✓" or "✗") .. " " .. seed.ui)
         end)
     end
 
-    local countContainer = Create("Frame", {
-        Parent = seedsContent,
-        Size = UDim2.new(1, 0, 0, 44),
-        BackgroundTransparency = 1,
-        LayoutOrder = 100
-    })
+    task.defer(updateSeedsSize)
 
-    UI:CreateInputField(countContainer, "Кол-во покупок:", "1", tostring(PurchaseCount), function(text)
-        local num = tonumber(text)
-        if num and num > 0 and num <= 50 then
-            PurchaseCount = math.floor(num)
-        else
-            PurchaseCount = 1
-        end
-    end)
-
-    UI:CreateButton({
-        Parent = seedsContent,
-        Size = UDim2.new(1, 0, 0, 44),
-        Text = "🛒 Купить выбранные семена",
-        BackgroundColor = Theme.Accent.Success,
-        LayoutOrder = 101,
-        OnClick = function()
-            autoPurchaseSelected()
-        end
-    })
+    -- ================================
+    -- СТРАНИЦА ТЕЛЕПОРТОВ
+    -- ================================
 
     local TeleportsPage = Create("ScrollingFrame", {
         Parent = PagesHolder,
@@ -1180,11 +1259,64 @@ local function CreateMainUI()
         }
     })
 
-    local tpPanel, tpContent = UI:CreatePanel(TeleportsPage, "📍 Телепорты на участки", 320)
+    local tpPanel = Create("Frame", {
+        Parent = TeleportsPage,
+        Size = UDim2.new(1, -24, 0, 340),
+        BackgroundColor3 = Theme.Background.Tertiary,
+        BorderSizePixel = 0,
+        Children = {
+            Create("UICorner", { CornerRadius = UDim.new(0, 10) }),
+            Create("UIStroke", {
+                Color = Theme.Border.Subtle,
+                Thickness = 1,
+                Transparency = 0.8
+            })
+        }
+    })
+
+    Create("TextLabel", {
+        Parent = tpPanel,
+        Size = UDim2.new(1, -24, 0, 36),
+        Position = UDim2.fromOffset(12, 8),
+        BackgroundTransparency = 1,
+        Text = "📍 Телепорты на участки",
+        Font = Fonts.Bold,
+        TextSize = 15,
+        TextColor3 = Theme.Text.Primary,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextYAlignment = Enum.TextYAlignment.Top
+    })
+
+    Create("Frame", {
+        Parent = tpPanel,
+        Size = UDim2.new(1, -24, 0, 1),
+        Position = UDim2.fromOffset(12, 44),
+        BackgroundColor3 = Theme.Border.Default,
+        BackgroundTransparency = 0.7,
+        BorderSizePixel = 0
+    })
+
+    local tpScroll = Create("ScrollingFrame", {
+        Parent = tpPanel,
+        Size = UDim2.new(1, -24, 1, -56),
+        Position = UDim2.fromOffset(12, 52),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        CanvasSize = UDim2.fromOffset(0, 0),
+        ScrollBarThickness = 4,
+        ScrollBarImageColor3 = Theme.Accent.Primary,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        Children = {
+            Create("UIListLayout", {
+                Padding = UDim.new(0, 8),
+                SortOrder = Enum.SortOrder.LayoutOrder
+            })
+        }
+    })
 
     for i, pos in pairs(PLOT_POS) do
         UI:CreateButton({
-            Parent = tpContent,
+            Parent = tpScroll,
             Size = UDim2.new(1, 0, 0, 40),
             Text = "🏡 Участок " .. i,
             BackgroundColor = Theme.Background.Elevated,
@@ -1194,6 +1326,61 @@ local function CreateMainUI()
             end
         })
     end
+
+    -- ================================
+    -- СТРАНИЦА ТРЕЙДОВ
+    -- ================================
+
+    local TradesPage = Create("ScrollingFrame", {
+        Parent = PagesHolder,
+        Name = "TradesPage",
+        Size = UDim2.fromScale(1, 1),
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        CanvasSize = UDim2.fromOffset(0, 0),
+        ScrollBarThickness = 4,
+        ScrollBarImageColor3 = Theme.Accent.Primary,
+        AutomaticCanvasSize = Enum.AutomaticSize.Y,
+        Children = {
+            Create("UIListLayout", {
+                Padding = UDim.new(0, 12),
+                SortOrder = Enum.SortOrder.LayoutOrder
+            }),
+            Create("UIPadding", {
+                PaddingLeft = UDim.new(0, 12),
+                PaddingRight = UDim.new(0, 12),
+                PaddingTop = UDim.new(0, 12),
+                PaddingBottom = UDim.new(0, 12)
+            })
+        }
+    })
+
+    local tradesPanel = Create("Frame", {
+        Parent = TradesPage,
+        Size = UDim2.new(1, -24, 0, 200),
+        BackgroundColor3 = Theme.Background.Tertiary,
+        BorderSizePixel = 0,
+        Children = {
+            Create("UICorner", { CornerRadius = UDim.new(0, 10) }),
+            Create("UIStroke", {
+                Color = Theme.Border.Subtle,
+                Thickness = 1,
+                Transparency = 0.8
+            })
+        }
+    })
+
+    Create("TextLabel", {
+        Parent = tradesPanel,
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        Text = "💼 Трейды\n\nФункционал в разработке...",
+        Font = Fonts.Semibold,
+        TextSize = 16,
+        TextColor3 = Theme.Text.Secondary,
+        TextXAlignment = Enum.TextXAlignment.Center,
+        TextYAlignment = Enum.TextYAlignment.Center
+    })
 
     -- ================================
     -- НАВИГАЦИЯ
@@ -1236,6 +1423,7 @@ local function CreateMainUI()
     local mainBtn = createNavButton("Главная", "🏠", MainPage)
     local settingsBtn = createNavButton("Настройки", "⚙️", SettingsPage)
     local tpBtn = createNavButton("Телепорты", "📍", TeleportsPage)
+    local tradesBtn = createNavButton("Трейды", "💼", TradesPage)
 
     PageLayout:JumpTo(MainPage)
     activeBtn = mainBtn
@@ -1245,13 +1433,9 @@ local function CreateMainUI()
 
     ScreenGui.Parent = playerGui
     
-    print("✅ Modern Executor UI v3 загружен!")
+    print("✅ t1nkq scriptik загружен!")
     return ScreenGui
 end
-
--- ================================
--- ЗАПУСК
--- ================================
 
 local success, err = pcall(function()
     CreateMainUI()
